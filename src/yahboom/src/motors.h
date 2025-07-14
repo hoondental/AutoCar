@@ -11,6 +11,13 @@ struct AngularVelocities {
     float vel4;
 };
 
+struct AngularAccelerations {
+    float acc1;
+    float acc2;
+    float acc3;
+    float acc4;
+};
+
 
 struct EncoderReadings {
     uint32_t enc1;
@@ -45,8 +52,12 @@ private:
     uint32_t _pwm_resolution = 256;
     uint32_t _encoder_PPR = 1320;
 
-    EncoderReadings _reading_current = {0, 0, 0, 0, 0};
-    EncoderReadings _reading_previous = {0, 0, 0, 0, 0};
+    EncoderReadings _reading_0 = {0, 0, 0, 0, 0}; // D-0
+    EncoderReadings _reading_1 = {0, 0, 0, 0, 0}; // D-1
+    EncoderReadings _reading_2 = {0, 0, 0, 0, 0}; // D-2
+
+    AngularVelocities _angular_velocity = {0, 0, 0, 0};
+    AngularAccelerations _angular_acceleration = {0, 0, 0, 0};
 
 
     const TIM_TypeDef* timer_M1 = TIM8;
@@ -106,21 +117,37 @@ public:
 
     inline void readEncoders() {
         taskENTER_CRITICAL();
-        _reading_previous = _reading_current; // Store previous reading
-        _reading_current.enc1 = timer_E1->CNT;
-        _reading_current.enc2 = timer_E2->CNT;
-        _reading_current.enc3 = timer_E3->CNT;
-        _reading_current.enc4 = timer_E4->CNT;
-        _reading_current.cycles_at_reading = DWT->CYCCNT / 1000; // Update last reading time in milliseconds
+        _reading_2 = _reading_1; // Store previous reading
+        _reading_1 = _reading_0;
+        _reading_0.enc1 = timer_E1->CNT;
+        _reading_0.enc2 = timer_E2->CNT;
+        _reading_0.enc3 = timer_E3->CNT;
+        _reading_0.enc4 = timer_E4->CNT;
+        _reading_0.cycles_at_reading = DWT->CYCCNT / 1000; // Update last reading time in milliseconds
         taskEXIT_CRITICAL();
+        // calculate angular velocity
+
+        // calculate angular acceleration
     }
 
-    inline AngularVelocities readAngularVelocities() {
+    inline const EncoderReadings getReading0() { return _reading_0; }
+    inline const EncoderReadings getReading1() { return _reading_1; }
+    inline const EncoderReadings getReading2() { return _reading_2; }
+
+    inline AngularVelocities getAngularVelocities() {
+        static const float coeff = 2.0 * M_PI / _encoder_PPR * SystemCoreClock;
+        uint32_t d_cycles = _reading_current.cycles_at_reading - _reading_previous.cycles_at_reading;
+        float_t _scale = coeff / d_cycles;
+        uint32_t d_theta_1 = _reading_current.enc1 - _reading_previous.enc1;
+        uint32_t d_theta_2 = _reading_current.enc2 - _reading_previous.enc2;
+        uint32_t d_theta_3 = _reading_current.enc3 - _reading_previous.enc3;
+        uint32_t d_theta_4 = _reading_current.enc4 - _reading_previous.enc4;
+        
         AngularVelocities velocities;
-        velocities.vel1 = (2 * M_PI * timer_E1->CNT) / _encoder_PPR; // Convert to radians
-        velocities.vel2 = (2 * M_PI * timer_E2->CNT) / _encoder_PPR;
-        velocities.vel3 = (2 * M_PI * timer_E3->CNT) / _encoder_PPR;
-        velocities.vel4 = (2 * M_PI * timer_E4->CNT) / _encoder_PPR;
+        velocities.vel1 = _scale * d_theta_1;
+        velocities.vel2 = _scale * d_theta_2;
+        velocities.vel3 = _scale * d_theta_3;
+        velocities.vel4 = _scale * d_theta_4;
         return velocities;
     }
 
