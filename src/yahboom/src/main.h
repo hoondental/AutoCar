@@ -66,19 +66,3 @@ struct MotorsPWMTarget
 };
 
 
-struct EncodersCounter
-{
-    uint16_t cnt1 = 0;
-    uint16_t cnt2 = 0;
-    uint16_t cnt3 = 0;
-    uint16_t cnt4 = 0;
-};
-
-struct EncodersCounterDiff
-{
-    int16_t diff1 = 0;
-    int16_t diff2 = 0;
-    int16_t diff3 = 0;
-    int16_t diff4 = 0;
-};
-

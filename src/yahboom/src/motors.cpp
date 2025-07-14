@@ -173,3 +173,39 @@ void EncoderMotors::setupEncoders(uint32_t encoder_PPR) {
     TIM3->ARR = 0xFFFF; // 16-bit counter
     TIM3->CR1 |= TIM_CR1_CEN;
 }
+
+
+void EncoderMotors::readEncoders() {
+        taskENTER_CRITICAL();
+        _reading_2 = _reading_1; // Store previous reading
+        _reading_1 = _reading_0;
+        _angular_velocity_12 = _angular_velocity_01;
+        _reading_0.enc1 = timer_E1->CNT;
+        _reading_0.enc2 = timer_E2->CNT;
+        _reading_0.enc3 = timer_E3->CNT;
+        _reading_0.enc4 = timer_E4->CNT;
+        _reading_0.cycles_at_reading = DWT->CYCCNT; // Update last reading time in milliseconds
+        taskEXIT_CRITICAL();
+
+        static const float_t _system_clock = SystemCoreClock;
+        static const float_t _to_radian = 2.0 * M_PI / _encoder_PPR;
+
+        // calculate angular velocity        
+        uint32_t d_cycles_01 = _reading_0.cycles_at_reading - _reading_1.cycles_at_reading;
+        if (d_cycles_01 == 0) d_cycles_01 = 1;
+        float_t _scale_v = _to_radian / d_cycles_01 * _system_clock;
+        _angular_velocity_01.vel1 = _scale_v * int32_t(_reading_0.enc1 - _reading_1.enc1);
+        _angular_velocity_01.vel2 = _scale_v * int32_t(_reading_0.enc2 - _reading_1.enc2);
+        _angular_velocity_01.vel3 = _scale_v * int32_t(_reading_0.enc3 - _reading_1.enc3);
+        _angular_velocity_01.vel4 = _scale_v * int32_t(_reading_0.enc4 - _reading_1.enc4);
+
+        // calculate angular acceleration        
+        uint32_t d_cycles_12 = _reading_1.cycles_at_reading - _reading_2.cycles_at_reading;
+        if (d_cycles_12 == 0) d_cycles_12 = 1;
+        uint32_t d_cycles_02 = d_cycles_01 + d_cycles_12;
+        float_t _scale_a = 2.0 / d_cycles_02 * _system_clock;
+        _angular_acceleration_012.acc1 = _scale_a * (_angular_velocity_01.vel1 - _angular_velocity_12.vel1);
+        _angular_acceleration_012.acc2 = _scale_a * (_angular_velocity_01.vel2 - _angular_velocity_12.vel2);
+        _angular_acceleration_012.acc3 = _scale_a * (_angular_velocity_01.vel3 - _angular_velocity_12.vel3);
+        _angular_acceleration_012.acc4 = _scale_a * (_angular_velocity_01.vel4 - _angular_velocity_12.vel4);
+     }

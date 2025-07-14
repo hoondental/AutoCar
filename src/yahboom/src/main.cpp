@@ -30,8 +30,9 @@ MPU9250I2C& mpu = MPU9250I2C::getInstance(GPIOB, GPIO_PIN_15, GPIOB, GPIO_PIN_13
 
 // global shared variable for motor control
 MotorsPWMTarget global_motors_pwm_target;
-EncodersCounter global_encoders_counter;
-EncodersCounterDiff global_encoders_counter_diff;
+EncoderReadings global_encoders_readings;
+AngularVelocities global_wheel_velocities;
+AngularAccelerations global_wheel_accelerations;
 bfs::SbusData global_sbus_data;
 uint32_t global_lost_time_ms = 0;
 MPUData global_mpu_data;
@@ -170,25 +171,12 @@ void EncoderReadTask(void* pvParameters) {
   TickType_t xLastWakeTime = xTaskGetTickCount(); 
 
   // local copy of the encoder counters
-  EncodersCounter encoders_counter;
-  EncodersCounterDiff encoders_counter_diff;
 
   for (;;) {
-    encoders_counter.cnt1 = TIM_ENCODER1->CNT;
-    encoders_counter.cnt2 = TIM_ENCODER2->CNT;
-    encoders_counter.cnt3 = TIM_ENCODER3->CNT;
-    encoders_counter.cnt4 = TIM_ENCODER4->CNT;
-
-    encoders_counter_diff.diff1 = encoders_counter.cnt1 - global_encoders_counter.cnt1;
-    encoders_counter_diff.diff2 = encoders_counter.cnt2 - global_encoders_counter.cnt2;
-    encoders_counter_diff.diff3 = encoders_counter.cnt3 - global_encoders_counter.cnt3;
-    encoders_counter_diff.diff4 = encoders_counter.cnt4 - global_encoders_counter.cnt4;
-    
-    taskENTER_CRITICAL();
-    global_encoders_counter = encoders_counter;
-    global_encoders_counter_diff = encoders_counter_diff;
-    taskEXIT_CRITICAL();
-
+    encoder_motors.readEncoders();
+    global_encoders_readings = encoder_motors.getReading();
+    global_wheel_velocities = encoder_motors.getAngularVelocity();
+    global_wheel_accelerations = encoder_motors.getAngularAcceleration();
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
@@ -204,25 +192,23 @@ void Serial1CastTask(void* pvParameters) {
   for (;;) {
     taskENTER_CRITICAL();
     MotorsPWMTarget target = global_motors_pwm_target;
-    EncodersCounter encoders_counter = global_encoders_counter;
-    EncodersCounterDiff encoders_counter_diff = global_encoders_counter_diff;
     taskEXIT_CRITICAL();
 
-    Serial1.print(encoders_counter.cnt1);
+    Serial1.print(global_wheel_velocities.vel1);
     Serial1.print(" ");
-    Serial1.print(encoders_counter.cnt2);
+    Serial1.print(global_wheel_velocities.vel2);
     Serial1.print(" ");
-    Serial1.print(encoders_counter.cnt3);
+    Serial1.print(global_wheel_velocities.vel3);
     Serial1.print(" ");
-    Serial1.print(encoders_counter.cnt4);
+    Serial1.print(global_wheel_velocities.vel4);
     Serial1.print("  ||   ");
-    Serial1.print(encoders_counter_diff.diff1);
+    Serial1.print(global_wheel_accelerations.acc1);
     Serial1.print(" ");
-    Serial1.print(encoders_counter_diff.diff2);
+    Serial1.print(global_wheel_accelerations.acc2);
     Serial1.print(" ");
-    Serial1.print(encoders_counter_diff.diff3);
+    Serial1.print(global_wheel_accelerations.acc3);
     Serial1.print(" ");
-    Serial1.print(encoders_counter_diff.diff4);
+    Serial1.print(global_wheel_accelerations.acc4);
     Serial1.print("  ||   ");
     Serial1.print(target.m1_A);
     Serial1.print(" ");
