@@ -7,6 +7,10 @@
 
 class EncoderMotors {
 private:
+
+    uint32_t _pwm_frequency = 10000;
+    uint32_t _pwm_resolution = 256;
+
     const TIM_TypeDef* timer_M1 = TIM8;
     const TIM_TypeDef* timer_M2 = TIM8;
     const TIM_TypeDef* timer_M3 = TIM1;

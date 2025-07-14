@@ -49,6 +49,10 @@ void EncoderMotors::enableGPIOs() {
 
 
 void EncoderMotors::setupPWMs(uint32_t pwm_frequency, uint32_t pwm_resolution) {
+    _pwm_frequency = pwm_frequency;
+    _pwm_resolution = pwm_resolution;
+    
+    // Calculate prescaler based on system clock and desired PWM frequency
     uint32_t systemClock = HAL_RCC_GetHCLKFreq();  // Usually 72MHz
     uint32_t prescaler = (systemClock / (pwm_frequency * pwm_resolution)) - 1;
 
