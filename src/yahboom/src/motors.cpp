@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include <STM32FreeRTOS.h>
+
 #include "motors.h"
 
 
@@ -122,7 +124,9 @@ void EncoderMotors::setupPWMs(uint32_t pwm_frequency, uint32_t pwm_resolution) {
 
 
 
-void EncoderMotors::setupEncoders() {
+void EncoderMotors::setupEncoders(uint32_t encoder_PPR) {
+    _encoder_PPR = encoder_PPR;
+
     __HAL_AFIO_REMAP_SWJ_NOJTAG();
     __HAL_RCC_AFIO_CLK_ENABLE();
     // TIM2 full remap: PA15 (CH1), PB3 (CH2)
