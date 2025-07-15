@@ -209,3 +209,11 @@ void EncoderMotors::readEncoders() {
         _angular_acceleration_012.acc3 = _scale_a * (_angular_velocity_01.vel3 - _angular_velocity_12.vel3);
         _angular_acceleration_012.acc4 = _scale_a * (_angular_velocity_01.vel4 - _angular_velocity_12.vel4);
      }
+
+
+
+     // ============================== SGFilter =================================
+     bool SGFilter::generateFilter(uint32_t N_samples, float_t dt, uint32_t order) {
+        _filter = new float_t[N_samples];
+        
+     }

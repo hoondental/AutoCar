@@ -116,14 +116,43 @@ public:
         setPWMs(pwms.pwm1_A, pwms.pwm1_B, pwms.pwm2_A, pwms.pwm2_B, pwms.pwm3_A, pwms.pwm3_B, pwms.pwm4_A, pwms.pwm4_B);
     }
 
-    void readEncoders();
-    
-
-    inline const EncoderReadings getReading() { return _reading_0; }
-    inline const AngularVelocities getAngularVelocity() { return _angular_velocity_01; }
-    inline const AngularAccelerations getAngularAcceleration() { return _angular_acceleration_012; }
-    
-
-    
-    
+    inline EncoderReadings readEncoders() {
+        EncoderReadings reading;
+        taskENTER_CRITICAL();
+        reading.enc1 = timer_E1->CNT;
+        reading.enc2 = timer_E2->CNT;
+        reading.enc3 = timer_E3->CNT;
+        reading.enc4 = timer_E4->CNT;
+        reading.cycles_at_reading = DWT->CYCCNT; // Update last reading time in milliseconds
+        taskEXIT_CRITICAL();
+        return reading;
+    }    
 };
+
+
+class SGFilter {
+private:
+    uint32_t _order;
+    uint32_t _N_samples;
+    float_t _dt;
+    float_t* _buf;
+    float_t* _filter;
+    size_t _idx0; 
+    
+    SGFilter() {}
+
+    bool generateFilter(uint32_t N_samples, float_t dt, uint32_t order);
+
+public:
+    SGFilter(uint32_t N_samples, float_t dt, uint32_t order) {
+        _order = order;
+        _N_samples = N_samples;
+        _dt = dt;
+        _buf = new float_t[_N_samples];
+        _idx0 = 0;
+    }
+
+    void fit(float_t x, float_t* coeff);
+
+
+}
