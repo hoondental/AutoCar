@@ -181,9 +181,10 @@ void EncoderReadTask(void* pvParameters) {
   TickType_t xLastWakeTime = xTaskGetTickCount(); 
 
   // 4 filters for each encoder
-  float_t dt = 1.0 / MPU_DATA_RATE_HZ;
+  float_t dt = 0.01;
   uint32_t n = FILTER_N_SAMPLES;
-  SG2Filter filter1(n, dt), filter2(n, dt), filter3(n, dt), filter4(n, dt);
+  uint32_t ppr = ENCODER_PPR;
+  SG2Filter filter1(n, dt, ppr), filter2(n, dt, ppr), filter3(n, dt, ppr), filter4(n, dt, ppr);
   float_t a10, a11, a12, a20, a21, a22, a30, a31, a32, a40, a41, a42;
   // local copy of the encoder counters
   EncoderReadings readings;
@@ -358,7 +359,7 @@ void setup() {
 
   // Start FreeRTOS task
   xTaskCreate(BlinkTask, "Blink", 128, NULL, 1, NULL);
-  xTaskCreate(BuzzTask, "Buzz", 128, NULL, 1, NULL);
+  //xTaskCreate(BuzzTask, "Buzz", 128, NULL, 1, NULL);
   //xTaskCreate(MotorPWMSetTask, "MotorPWMSet", 128, NULL, 1, NULL);
   //xTaskCreate(MotorPWMControlTask, "MotorPWMControl", 128, NULL, 1, NULL);
   xTaskCreate(EncoderReadTask, "EncoderRead", 128, NULL, 1, NULL); 

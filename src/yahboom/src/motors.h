@@ -2,7 +2,7 @@
 #include <STM32FreeRTOS.h>
 #include "arm_math.h"
 
-#define ARM_MATH_CM3
+#define ENCODER_PPR 1320
 
 
 // in radians / second
@@ -23,10 +23,11 @@ struct AngularAccelerations {
 
 
 struct EncoderReadings {
-    uint32_t enc1;
-    uint32_t enc2;
-    uint32_t enc3;
-    uint32_t enc4;
+    // ARR = 0xFFFF
+    uint16_t enc1;
+    uint16_t enc2;
+    uint16_t enc3;
+    uint16_t enc4;
     uint32_t cycles_at_reading; // DWT->CYCCNT
 };
 
@@ -55,9 +56,9 @@ private:
     uint32_t _pwm_resolution = 256;
     uint32_t _encoder_PPR = 1320;
 
-    EncoderReadings _reading_0 = {0, 0, 0, 0, 0}; // D-0
-    EncoderReadings _reading_1 = {0, 0, 0, 0, 0}; // D-1
-    EncoderReadings _reading_2 = {0, 0, 0, 0, 0}; // D-2
+    //EncoderReadings _reading_0 = {0, 0, 0, 0, 0}; // D-0
+    //EncoderReadings _reading_1 = {0, 0, 0, 0, 0}; // D-1
+    //EncoderReadings _reading_2 = {0, 0, 0, 0, 0}; // D-2
 
     //AngularVelocities _angular_velocity_01 = {0, 0, 0, 0};
     //AngularVelocities _angular_velocity_12 = {0, 0, 0, 0};
@@ -135,28 +136,34 @@ public:
 
 class SG2Filter {
 private:
-    uint32_t _order;
-    uint32_t _N_samples;
+    uint32_t _encoder_PPR = 1320;
+    
+    uint16_t _N_samples;
     float_t _dt;
     arm_matrix_instance_f32 _ATAiAT; // 3 x N_samples, a0, a1, a2 order
     float_t *_ATAiAT_data;
-    float_t *_buf;
+    //float_t *_buf;
+    uint16_t *_buf_u16;
     size_t _idx0; 
     
     SG2Filter() {}
 
-    bool generateFilter(uint32_t N_samples, float_t dt);
+    bool generateFilter();
 
 public:
-    SG2Filter(uint32_t N_samples, float_t dt) {
+    SG2Filter(uint32_t N_samples, float_t dt, uint32_t encoder_PPR = 1320) {
+        _encoder_PPR = encoder_PPR;
         _N_samples = N_samples;
         _dt = dt;
         _ATAiAT_data = new float_t[3 * N_samples];
-        _buf = new float_t[N_samples]();  // initialize to zero
-        _idx0 = 0;
+        //_buf = new float_t[N_samples]();  // initialize to zero
+        _buf_u16 = new uint16_t[N_samples]();
+        _idx0 = N_samples - 1;
+        generateFilter();
     }
 
-    void fit(float_t x, float_t& a0, float_t& a1, float_t& a2);
+    //void fit(float_t x, float_t& a0, float_t& a1, float_t& a2);
+    void fit(uint16_t x, float_t& a0, float_t& a1, float_t& a2);
 
 
 };
