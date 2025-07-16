@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <STM32FreeRTOS.h>
+#include "arm_math.h"
 
 #include "motors.h"
 
@@ -174,7 +175,7 @@ void EncoderMotors::setupEncoders(uint32_t encoder_PPR) {
     TIM3->CR1 |= TIM_CR1_CEN;
 }
 
-
+/*
 void EncoderMotors::readEncoders() {
         taskENTER_CRITICAL();
         _reading_2 = _reading_1; // Store previous reading
@@ -209,11 +210,53 @@ void EncoderMotors::readEncoders() {
         _angular_acceleration_012.acc3 = _scale_a * (_angular_velocity_01.vel3 - _angular_velocity_12.vel3);
         _angular_acceleration_012.acc4 = _scale_a * (_angular_velocity_01.vel4 - _angular_velocity_12.vel4);
      }
-
+*/
 
 
      // ============================== SGFilter =================================
-     bool SGFilter::generateFilter(uint32_t N_samples, float_t dt, uint32_t order) {
-        _filter = new float_t[N_samples];
-        
+     bool SG2Filter::generateFilter(uint32_t N_samples, float_t dt) {
+        float_t A_data[N_samples * 3];
+        float_t AT_data[3 * N_samples];
+        float_t ATA_data[3 * 3];
+        float_t ATAi_data[3 * 3];
+        for (int i=0; i<N_samples; i++) {
+            float_t j = -(float_t(N_samples) - 1.0 - i);
+            A_data[i * N_samples] = 1.0;
+            A_data[i * N_samples + 1] = j * dt;
+            A_data[i * N_samples + 2] = pow(j * dt, 2.0);
+        }
+
+        arm_matrix_instance_f32 A, AT, ATA, ATAi, ATAiAT;
+        arm_mat_init_f32(&A, N_samples, 3, A_data);
+        arm_mat_init_f32(&AT, 3, N_samples, AT_data);
+        arm_mat_init_f32(&ATA, 3, 3, ATA_data);
+        arm_mat_init_f32(&ATAi, 3, 3, ATAi_data);
+        arm_mat_init_f32(&_ATAiAT, 3, N_samples, _ATAiAT_data);
+        if (arm_mat_trans_f32(&A, &AT) != ARM_MATH_SUCCESS) return false;
+        if (arm_mat_mult_f32(&AT, &A, &ATA) != ARM_MATH_SUCCESS) return false;
+        if (arm_mat_inverse_f32(&ATA, &ATAi) != ARM_MATH_SUCCESS) return false;
+        if (arm_mat_mult_f32(&ATAi, &AT, &_ATAiAT) != ARM_MATH_SUCCESS) return false;
+        return true;
      }
+
+void SG2Filter::fit(float_t x, float_t& a0, float_t& a1, float_t& a2) {
+    _buf[_idx0] = x;
+    _idx0 = (_idx0 + 1) % _N_samples;
+    int k = 0;
+
+    a0 = 0;
+    for (int i=0; i<_N_samples; i++) {
+        k = (i + _idx0) % _N_samples;
+        a0 += _buf[k] * _ATAiAT_data[0, i];
+    }
+    a1 = 0;
+    for (int i=0; i<_N_samples; i++) {
+        k = (i + _idx0) % _N_samples;
+        a1 += _buf[k] * _ATAiAT_data[1, i];
+    }
+    a2 = 0;
+    for (int i=0; i<_N_samples; i++) {
+        k = (i + _idx0) % _N_samples;
+        a2 += _buf[k] * _ATAiAT_data[2, i];
+    }
+}

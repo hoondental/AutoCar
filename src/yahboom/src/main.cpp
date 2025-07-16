@@ -19,6 +19,16 @@
 #define MPU_DATA_RATE_HZ 200
 #define MPU_MAG_DATA_RATE_HZ 100 // CONTINUOUS
 
+// filtering
+#define FILTER_N_SAMPLES 7
+
+// RC command
+#define RC_CHANNEL_MODE 8
+#define RC_CHANNEL_LOGNITUDINAL 1
+#define RC_CHANNEL_LATERAL 2
+#define RC_CHANNEL_YAW 3
+
+
 HardwareSerial Serial1(PA10, PA9);
 EncoderMotors& encoder_motors = EncoderMotors::getInstance();
 RC& rc = RC::getInstance(&Serial2, true, false);
@@ -170,13 +180,34 @@ void EncoderReadTask(void* pvParameters) {
   const TickType_t xFrequency = pdMS_TO_TICKS(10); // 10ms = 100Hz
   TickType_t xLastWakeTime = xTaskGetTickCount(); 
 
+  // 4 filters for each encoder
+  float_t dt = 1.0 / MPU_DATA_RATE_HZ;
+  uint32_t n = FILTER_N_SAMPLES;
+  SG2Filter filter1(n, dt), filter2(n, dt), filter3(n, dt), filter4(n, dt);
+  float_t a10, a11, a12, a20, a21, a22, a30, a31, a32, a40, a41, a42;
   // local copy of the encoder counters
+  EncoderReadings readings;
 
   for (;;) {
-    encoder_motors.readEncoders();
-    global_encoders_readings = encoder_motors.getReading();
-    global_wheel_velocities = encoder_motors.getAngularVelocity();
-    global_wheel_accelerations = encoder_motors.getAngularAcceleration();
+    readings = encoder_motors.readEncoders();
+    filter1.fit(readings.enc1, a10, a11, a12);
+    filter2.fit(readings.enc2, a20, a21, a22);
+    filter3.fit(readings.enc3, a30, a31, a32);
+    filter4.fit(readings.enc4, a40, a41, a42);
+
+    global_encoders_readings = readings;
+    global_wheel_velocities.vel1 = a11;
+    global_wheel_velocities.vel2 = a21;
+    global_wheel_velocities.vel3 = a31;
+    global_wheel_velocities.vel4 = a41;
+    global_wheel_accelerations.acc1 = 2.0 * a12;
+    global_wheel_accelerations.acc2 = 2.0 * a22;
+    global_wheel_accelerations.acc3 = 2.0 * a32;
+    global_wheel_accelerations.acc4 = 2.0 * a42;
+    
+    //global_encoders_readings = encoder_motors.getReading();
+    //global_wheel_velocities = encoder_motors.getAngularVelocity();
+    //global_wheel_accelerations = encoder_motors.getAngularAcceleration();
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }

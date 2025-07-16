@@ -1,5 +1,8 @@
 #include <Arduino.h>
 #include <STM32FreeRTOS.h>
+#include "arm_math.h"
+
+#define ARM_MATH_CM3
 
 
 // in radians / second
@@ -56,9 +59,9 @@ private:
     EncoderReadings _reading_1 = {0, 0, 0, 0, 0}; // D-1
     EncoderReadings _reading_2 = {0, 0, 0, 0, 0}; // D-2
 
-    AngularVelocities _angular_velocity_01 = {0, 0, 0, 0};
-    AngularVelocities _angular_velocity_12 = {0, 0, 0, 0};
-    AngularAccelerations _angular_acceleration_012 = {0, 0, 0, 0};
+    //AngularVelocities _angular_velocity_01 = {0, 0, 0, 0};
+    //AngularVelocities _angular_velocity_12 = {0, 0, 0, 0};
+    //AngularAccelerations _angular_acceleration_012 = {0, 0, 0, 0};
 
 
     const TIM_TypeDef* timer_M1 = TIM8;
@@ -130,29 +133,30 @@ public:
 };
 
 
-class SGFilter {
+class SG2Filter {
 private:
     uint32_t _order;
     uint32_t _N_samples;
     float_t _dt;
-    float_t* _buf;
-    float_t* _filter;
+    arm_matrix_instance_f32 _ATAiAT; // 3 x N_samples, a0, a1, a2 order
+    float_t *_ATAiAT_data;
+    float_t *_buf;
     size_t _idx0; 
     
-    SGFilter() {}
+    SG2Filter() {}
 
-    bool generateFilter(uint32_t N_samples, float_t dt, uint32_t order);
+    bool generateFilter(uint32_t N_samples, float_t dt);
 
 public:
-    SGFilter(uint32_t N_samples, float_t dt, uint32_t order) {
-        _order = order;
+    SG2Filter(uint32_t N_samples, float_t dt) {
         _N_samples = N_samples;
         _dt = dt;
-        _buf = new float_t[_N_samples];
+        _ATAiAT_data = new float_t[3 * N_samples];
+        _buf = new float_t[N_samples]();  // initialize to zero
         _idx0 = 0;
     }
 
-    void fit(float_t x, float_t* coeff);
+    void fit(float_t x, float_t& a0, float_t& a1, float_t& a2);
 
 
-}
+};
