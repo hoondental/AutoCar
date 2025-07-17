@@ -134,6 +134,9 @@ public:
 };
 
 
+// ==================================== SG2Filter =======================================
+// encoder 입력을 받아서 SG filter 를 거친 후 angle, angular velocity, angular acceleration 을 출력
+
 class SG2Filter {
 private:
     uint32_t _encoder_PPR = 1320;
@@ -167,3 +170,37 @@ public:
 
 
 };
+
+
+
+// ============================== Car Model =================================
+// 차의 방향은 오른쪽을 x축, 정면을 y축으로 함. 
+
+enum WheelLocation: size_t {
+    FRONT_LEFT,
+    FRONT_RIGHT,
+    REAR_RIGHT,
+    REAR_LEFT
+};
+
+class CarModel {
+private:
+    float_t _wheel_radius;
+    float_t _wheel_weight;
+    float_t _wheel_inertia_of_moment;
+    float_t _roller_angles[4];
+    float_t _wheel_center_xs[4];
+    float_t _wheel_center_ys[4];
+
+    // 현재 추정 위치 속도 및 가속도
+    float_t _car_x, _car_y, _car_theta;
+    float_t _car_vx, _car_vy, _car_omega;
+    float_t _car_ax, _car_ay, _car_alpha;
+
+    
+
+
+public:
+
+
+}

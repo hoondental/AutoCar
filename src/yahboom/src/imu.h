@@ -26,6 +26,7 @@
 #define MAG_CNTL2_REG          	0X0B
 #define MAG_XOUT_L_REG			0X03	
 #define MAG_XOUT_H_REG			0X04
+#define MAG_ASA_REG             0x10
 
 
 

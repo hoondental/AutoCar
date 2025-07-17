@@ -26,23 +26,25 @@ bool MPU9250I2C::begin(int gyro_range_dps, int accel_range_g, uint16_t mpu_dataR
     delay(10);
 
     // Set Gyroscope range
+    float_t _degree_to_radian = M_PI / 180.0;
     uint8_t gyroConfig;
     switch (gyro_range_dps) {
-        case 250:  gyroConfig = 0x00; _gyroScale = 131.0; break;
-        case 500:  gyroConfig = 0x08; _gyroScale = 65.5; break;
-        case 1000: gyroConfig = 0x10; _gyroScale = 32.8; break;
-        case 2000: gyroConfig = 0x18; _gyroScale = 16.4; break;
+        case 250:  gyroConfig = 0x00; _gyroScale = 131.0 / _degree_to_radian; break;
+        case 500:  gyroConfig = 0x08; _gyroScale = 65.5 / _degree_to_radian; break;
+        case 1000: gyroConfig = 0x10; _gyroScale = 32.8 / _degree_to_radian; break;
+        case 2000: gyroConfig = 0x18; _gyroScale = 16.4 / _degree_to_radian; break;
         default:   return false; // Invalid input
     }
     if (!writeByte(MPU_ADDR, MPU_GYRO_CFG_REG, gyroConfig)) return false;
 
     // Set Accelerometer range
+    float_t _g_to_m_s2 = 9.8;
     uint8_t accelConfig;
     switch (accel_range_g) {
-        case 2:  accelConfig = 0x00; _accScale = 16384.0; break;
-        case 4:  accelConfig = 0x08; _accScale = 8192.0; break;
-        case 8:  accelConfig = 0x10; _accScale = 4096.0; break;
-        case 16: accelConfig = 0x18; _accScale = 2048.0; break;
+        case 2:  accelConfig = 0x00; _accScale = 16384.0 / _g_to_m_s2; break;
+        case 4:  accelConfig = 0x08; _accScale = 8192.0 / _g_to_m_s2; break;
+        case 8:  accelConfig = 0x10; _accScale = 4096.0 / _g_to_m_s2; break;
+        case 16: accelConfig = 0x18; _accScale = 2048.0 / _g_to_m_s2; break;
         default: return false; // Invalid input
     }
 
@@ -96,20 +98,20 @@ bool MPU9250I2C::initAK8963(uint16_t rate_Hz) {
     if (!writeByte(MAG_ADDR, MAG_CNTL2_REG, 0x01)) return false;
 
     // Power down mag
-    //writeByte(MAG_ADDR, MAG_CNTL1_REG, 0x00);
-    //delay(10);
+    writeByte(MAG_ADDR, MAG_CNTL1_REG, 0x00);
+    delay(10);
 
     // Enter Fuse ROM access mode to read sensitivity adjustment
-    //writeByte(MAG_ADDR, MAG_CNTL1_REG, 0x0F);
-    //delay(10);
+    writeByte(MAG_ADDR, MAG_CNTL1_REG, 0x0F);
+    delay(10);
 
     // Read ASA calibration values (registers 0x10–0x12)
-    //uint8_t asa[3];
-    //readBytes(MAG_ADDR, 0x10, asa, 3);
+    uint8_t asa[3];
+    readBytes(MAG_ADDR, MAG_ASA_REG, asa, 3);
 
     // Power down again before setting continuous mode
-    //writeByte(MAG_ADDR, MAG_CNTL1_REG, 0x00);
-    //delay(10);
+    writeByte(MAG_ADDR, MAG_CNTL1_REG, 0x00);
+    delay(10);
 
     // Set data rate
     uint8_t rateConfig = 0x16; // default to 8 Hz
