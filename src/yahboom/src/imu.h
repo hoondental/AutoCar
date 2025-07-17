@@ -52,6 +52,12 @@ struct AccelData {
     int16_t z = 0;
 };
 
+struct AccelData_f {
+    float_t x = 0.0;
+    float_t y = 0.0;
+    float_t z = 0.0;
+};
+
 
 struct GyroData
 {
@@ -60,12 +66,26 @@ struct GyroData
     int16_t z = 0;
 };
 
+struct GyroData_f
+{
+    float_t x = 0.0;
+    float_t y = 0.0;
+    float_t z = 0.0;
+};
+
 
 struct MagData
 {
     int16_t x = 0;
     int16_t y = 0;
     int16_t z = 0;
+};
+
+struct MagData_f
+{
+    float_t x = 0.0;
+    float_t y = 0.0;
+    float_t z = 0.0;
 };
 
 
@@ -78,6 +98,15 @@ struct MPUData
 };
 
 
+struct MPUData_f
+{
+    AccelData_f accel;
+    GyroData_f gyro;
+    MagData_f mag;
+    float_t temp = 0.0;
+};
+
+
 
 
 
@@ -86,6 +115,7 @@ class MPU9250I2C
 {
 private:
     MPUData _data;
+    MPUData_f _data_f;
     SoftI2C _i2c;
     GPIO_TypeDef* _port_ad0;
     uint16_t _pin_ad0;
@@ -98,7 +128,10 @@ private:
     bool i2cBypassEnable();
     float _accScale = 16384.0;   // for ±2g
     float _gyroScale = 131.0;    // for ±250°/s
-    const float _magScale = 0.15f;     // µT/LSB
+    float _magScale_x = 0.15f;     // µT/LSB
+    float _magScale_y = 0.15f;     // µT/LSB
+    float _magScale_z = 0.15f;     // µT/LSB
+    uint8_t _asa_x, _asa_y, _asa_z;
 
     // singleton
     MPU9250I2C() = delete;    
@@ -129,6 +162,11 @@ public:
     inline const GyroData& gyro() const { return _data.gyro; }
     inline const MagData& mag() const { return _data.mag; }
     inline int16_t temp() { return _data.temp; }
+    inline const MPUData_f& data_f() const { return _data_f; }
+    inline const AccelData_f& accel_f() const { return _data_f.accel; }
+    inline const GyroData_f& gyro_f() const { return _data_f.gyro; }
+    inline const MagData_f& mag_f() const { return _data_f.mag; }
+    inline float_t temp_f() { return _data_f.temp; }
 };
 
 

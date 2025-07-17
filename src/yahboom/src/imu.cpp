@@ -108,6 +108,16 @@ bool MPU9250I2C::initAK8963(uint16_t rate_Hz) {
     // Read ASA calibration values (registers 0x10–0x12)
     uint8_t asa[3];
     readBytes(MAG_ADDR, MAG_ASA_REG, asa, 3);
+    _asa_x = asa[0];
+    _asa_y = asa[1];
+    _asa_z = asa[2];
+    float_t _mag_adjust_x = float(_asa_x - 128) / 256.0 + 1.0;
+    float_t _mag_adjust_y = float(_asa_y - 128) / 256.0 + 1.0;
+    float_t _mag_adjust_z = float(_asa_z - 128) / 256.0 + 1.0;
+
+    _magScale_x *= _mag_adjust_x;
+    _magScale_y *= _mag_adjust_y;
+    _magScale_z *= _mag_adjust_z;
 
     // Power down again before setting continuous mode
     writeByte(MAG_ADDR, MAG_CNTL1_REG, 0x00);
@@ -132,6 +142,9 @@ bool MPU9250I2C::readAccel() {
     _data.accel.x = (int16_t)((buf[0] << 8) | buf[1]);
     _data.accel.y = (int16_t)((buf[2] << 8) | buf[3]);
     _data.accel.z = (int16_t)((buf[4] << 8) | buf[5]);
+    _data_f.accel.x = float(_data.accel.x) / _accScale;
+    _data_f.accel.y = float(_data.accel.y) / _accScale;
+    _data_f.accel.z = float(_data.accel.z) / _accScale;
     return true;
 }
 
@@ -141,6 +154,9 @@ bool MPU9250I2C::readGyro() {
     _data.gyro.x = (int16_t)((buf[0] << 8) | buf[1]);
     _data.gyro.y = (int16_t)((buf[2] << 8) | buf[3]);
     _data.gyro.z = (int16_t)((buf[4] << 8) | buf[5]);
+    _data_f.gyro.x = float(_data.gyro.x) / _gyroScale;
+    _data_f.gyro.y = float(_data.gyro.y) / _gyroScale;
+    _data_f.gyro.z = float(_data.gyro.z) / _gyroScale;
     return true;
 }
 
@@ -157,6 +173,9 @@ bool MPU9250I2C::readMag() {
     _data.mag.x = (int16_t)((buf[1] << 8) | buf[0]);
     _data.mag.y = (int16_t)((buf[3] << 8) | buf[2]);
     _data.mag.z = (int16_t)((buf[5] << 8) | buf[4]);
+    _data_f.mag.x = float(_data.mag.x) * _magScale_x;
+    _data_f.mag.y = float(_data.mag.y) * _magScale_y;
+    _data_f.mag.z = float(_data.mag.z) * _magScale_z;
     return true;
 }
 
@@ -164,6 +183,7 @@ bool MPU9250I2C::readTemp() {
     uint8_t buf[2];
     if (!readBytes(MPU_ADDR, MPU_TEMP_OUT_H_REG, buf, 2)) return false;
     _data.temp = (int16_t)((buf[0] << 8) | buf[1]);
+    _data_f.temp = float(_data.temp) / 333.87 + 21.0;
     return true;
 }
 

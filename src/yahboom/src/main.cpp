@@ -45,7 +45,7 @@ AngularVelocities global_wheel_velocities;
 AngularAccelerations global_wheel_accelerations;
 bfs::SbusData global_sbus_data;
 uint32_t global_lost_time_ms = 0;
-MPUData global_mpu_data;
+MPUData_f global_mpu_data;
 
 
 void RCReadTask(void* pvParameters) {
@@ -79,7 +79,7 @@ void MPUReadTask(void* pvParameters) {
         Serial1.print("MPU9250 initialization failed!: ");
         Serial1.println(status);
     } 
-
+  
     MPUData data;
 
     const TickType_t xFrequency = pdMS_TO_TICKS(50); // 10ms = 100Hz
@@ -88,7 +88,7 @@ void MPUReadTask(void* pvParameters) {
     for (;;) {
         mpu.read();
         taskENTER_CRITICAL();
-        global_mpu_data = mpu.data();
+        global_mpu_data = mpu.data_f();
         taskEXIT_CRITICAL();
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }

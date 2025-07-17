@@ -175,20 +175,22 @@ public:
 
 // ============================== Car Model =================================
 // 차의 방향은 오른쪽을 x축, 정면을 y축으로 함. 
+// 각은 x축에서부터 반시계방향으로 측정
+
 
 enum WheelLocation: size_t {
-    FRONT_LEFT,
     FRONT_RIGHT,
-    REAR_RIGHT,
-    REAR_LEFT
+    FRONT_LEFT,
+    REAR_LEFT,
+    REAR_RIGHT    
 };
 
 class CarModel {
 private:
     float_t _wheel_radius;
     float_t _wheel_weight;
-    float_t _wheel_inertia_of_moment;
-    float_t _roller_angles[4];
+    float_t _wheel_moment_of_inertia;
+    float_t _wheel_roller_free_angles[4];
     float_t _wheel_center_xs[4];
     float_t _wheel_center_ys[4];
 
@@ -202,5 +204,44 @@ private:
 
 public:
 
+    void compute_wheel_angular_velocity_from_car_velocity(float_t vx, float_t vy, float_t omega, 
+                                              float_t& w1, float_t& w2, float_t& w3, float_t& w4) {
+        // wheel velocity
+        // V_wheel = V_car + omega X r_wheel (as vector)
+        float_t vx1 = vx - omega * _wheel_center_ys[FRONT_RIGHT]; 
+        float_t vx2 = vx - omega * _wheel_center_ys[FRONT_LEFT];
+        float_t vx3 = vx - omega * _wheel_center_ys[REAR_LEFT];
+        float_t vx4 = vx - omega * _wheel_center_ys[REAR_RIGHT];
+        float_t vy1 = vy + omega * _wheel_center_xs[FRONT_RIGHT];
+        float_t vy2 = vy + omega * _wheel_center_xs[FRONT_LEFT];
+        float_t vy3 = vy + omega * _wheel_center_xs[REAR_LEFT];
+        float_t vy4 = vy + omega * _wheel_center_xs[REAR_RIGHT];
 
-}
+        // angular velocity
+        // example
+        /*
+        vx1 = v_free; // t = 
+        vy1 = _wheel_radius * w1 + v_free;
+        vy1 - vx1 = _wheel_radius * w1;
+        w1 = (vy - vx + omega * (_wheel_center_xs[FRONT_RIGHT] + _wheel_center_ys[FRONT_RIGHT])) / _wheel_radius; 
+        */
+        w1 = (vy - vx + omega * (_wheel_center_xs[FRONT_RIGHT] + _wheel_center_ys[FRONT_RIGHT])) / _wheel_radius; 
+        w2 = (vy + vx + omega * (_wheel_center_xs[FRONT_LEFT] - _wheel_center_ys[FRONT_LEFT])) / _wheel_radius;
+        w3 = (vy - vx + omega * (_wheel_center_xs[REAR_LEFT] + _wheel_center_ys[REAR_LEFT])) / _wheel_radius;
+        w4 = (vy + vx + omega * (_wheel_center_xs[REAR_RIGHT] - _wheel_center_ys[REAR_RIGHT])) / _wheel_radius;               
+    }
+
+    void estimate_car_velocity_from_wheel_angular_velocity(float_t w1, float_t w2, float_t w3, float_t w4,
+                                              float_t& vx, float_t& vy, float_t& omega) {
+        // over-determined problem -> no-solution indicates slippage
+        vx = (w1 + w2 + w3 + w4) / 4;
+        vy = (w1 - w2 - w3 + w4) / 4;
+        omega = (w1 - w2 + w3 - w4) / 4;
+    }
+
+
+
+
+
+
+};
