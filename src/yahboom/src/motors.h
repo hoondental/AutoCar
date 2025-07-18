@@ -178,7 +178,7 @@ public:
 // 각은 x축에서부터 반시계방향으로 측정
 
 
-enum WheelLocation: size_t {
+enum WheelPosition: size_t {
     FRONT_RIGHT,
     FRONT_LEFT,
     REAR_LEFT,
@@ -193,6 +193,7 @@ private:
     float_t _wheel_roller_free_angles[4];
     float_t _wheel_center_xs[4];
     float_t _wheel_center_ys[4];
+    bool _is_symmetric;
 
     // 현재 추정 위치 속도 및 가속도
     float_t _car_x, _car_y, _car_theta;
@@ -205,7 +206,7 @@ private:
 public:
 
     void compute_wheel_angular_velocity_from_car_velocity(float_t vx, float_t vy, float_t omega, 
-                                              float_t& w1, float_t& w2, float_t& w3, float_t& w4) {
+                        float_t& w1, float_t& w2, float_t& w3, float_t& w4) {
         // wheel velocity
         // V_wheel = V_car + omega X r_wheel (as vector)
         float_t vx1 = vx - omega * _wheel_center_ys[FRONT_RIGHT]; 
@@ -220,8 +221,8 @@ public:
         // angular velocity
         // example
         /*
-        vx1 = v_free; // t = 
-        vy1 = _wheel_radius * w1 + v_free;
+        vx1 = v1_free; // t = 
+        vy1 = _wheel_radius * w1 + v1_free;
         vy1 - vx1 = _wheel_radius * w1;
         w1 = (vy - vx + omega * (_wheel_center_xs[FRONT_RIGHT] + _wheel_center_ys[FRONT_RIGHT])) / _wheel_radius; 
         */
@@ -232,8 +233,23 @@ public:
     }
 
     void estimate_car_velocity_from_wheel_angular_velocity(float_t w1, float_t w2, float_t w3, float_t w4,
-                                              float_t& vx, float_t& vy, float_t& omega) {
+                        float_t& vx, float_t& vy, float_t& omega) {
         // over-determined problem -> no-solution indicates slippage
+        /*
+        vx1 = v1_free - slippage1;
+        vy1 = _wheel_radius * w1 + v1_free + slippage1;
+        vx2 = -v2_free + slippage2;
+        v2y = _wheel_radius * w2 + v2_free + slippage2;
+        v3x = v3_free - slippage3;
+        v3y = _wheel_radius * w3 + v3_free + slippage3;
+        v4x = -v4_free + slippage4;
+        v4y = _wheel_raidus * w4 + v4_free + slippage4;
+
+        */
+        if (_is_symmetric) {
+            vx = (w1 + w2 + w3 + w4) * _wheel_radius / 4;
+            vy = (w1 - w2 - w3 + w4) / 4;
+            omega = (w1 - w2 + w3 - w4) / 4;
         vx = (w1 + w2 + w3 + w4) / 4;
         vy = (w1 - w2 - w3 + w4) / 4;
         omega = (w1 - w2 + w3 - w4) / 4;
