@@ -205,7 +205,7 @@ private:
 
 public:
 
-    void compute_wheel_angular_velocity_from_car_velocity(float_t vx, float_t vy, float_t omega, 
+    void compute_wheel_angular_velocity_from_car_motion(float_t vx, float_t vy, float_t omega, 
                         float_t& w1, float_t& w2, float_t& w3, float_t& w4) {
         // wheel velocity
         // V_wheel = V_car + omega X r_wheel (as vector)
@@ -232,7 +232,7 @@ public:
         w4 = (vy + vx + omega * (_wheel_center_xs[REAR_RIGHT] - _wheel_center_ys[REAR_RIGHT])) / _wheel_radius;               
     }
 
-    void estimate_car_velocity_from_wheel_angular_velocity(float_t w1, float_t w2, float_t w3, float_t w4,
+    void estimate_car_motion_from_wheel_angular_velocity(float_t w1, float_t w2, float_t w3, float_t w4,
                         float_t& vx, float_t& vy, float_t& omega) {
         // over-determined problem -> no-solution indicates slippage
         /*
