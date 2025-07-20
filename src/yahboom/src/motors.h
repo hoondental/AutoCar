@@ -33,7 +33,7 @@ struct CarVelocity {
 
 struct CarAcceleration {
     float_t ax, ay, alpha;
-}
+};
 
 
 
@@ -50,6 +50,13 @@ struct MotorPWMs {
     uint32_t pwm3_B;
     uint32_t pwm4_A;
     uint32_t pwm4_B;
+};
+
+
+struct MotorDutyRates {
+    float_t rate1 = 0.0, rate2 = 0.0, rate3 = 0.0, rate4 = 0.0; // 0.0 ~ 1.0
+    bool forward1 = true, forward2 = true, forward3 = true, forward4 = true; // true = forward, false = backward
+    bool brake1 = false, brake2 = false, brake3 = false, brake4 = false; // true = brake, false = coast
 };
 
 
@@ -109,6 +116,92 @@ public:
         setupPWMs(pwm_frequency, pwm_resolution);
         setupEncoders(encoder_PPR);
     }
+
+
+    inline void setDutyRate(MotorDutyRates& duty) {
+        setDutyRate(duty.rate1, duty.rate2, duty.rate3, duty.rate4, 
+                    duty.forward1, duty.forward2, duty.forward3, duty.forward4, 
+                    duty.brake1, duty.brake2, duty.brake3, duty.brake4);
+    }
+
+
+    inline void setDutyRate(float_t rate1, float_t rate2, float_t rate3, float_t rate4, 
+                            bool forward1 = true, bool forward2 = true, bool forward3 = true, bool forward4 = true, 
+                            bool brake1 = false, bool brake2 = false, bool brake3 = false, bool brake4 = false) {
+        // rate: 0.0 ~ 1.0
+        // forward: true = forward, false = backward
+        // if brake is true, rate means brake strength (0.0 ~ 1.0) and forwardn will be ignored
+        
+        if (rate2 < 0.0) rate2 = 0.0; else if (rate2 > 1.0) rate2 = 1.0;
+        if (rate3 < 0.0) rate3 = 0.0; else if (rate3 > 1.0) rate3 = 1.0;
+        if (rate4 < 0.0) rate4 = 0.0; else if (rate4 > 1.0) rate4 = 1.0;
+
+        MotorPWMs pwms;
+
+        if (rate1 < 0.0) rate1 = 0.0; else if (rate1 > 1.0) rate1 = 1.0;
+        uint32_t pwm1 = uint32_t(rate1 * _pwm_resolution);
+        if (brake1) {
+            pwms.pwm1_A = pwm1;
+            pwms.pwm1_B = pwm1;
+        } else {
+            if (forward1) {
+                pwms.pwm1_A = pwm1;
+                pwms.pwm1_B = 0;
+            } else {
+                pwms.pwm1_A = 0;
+                pwms.pwm1_B = pwm1;
+            }
+        }
+
+        if (rate2 < 0.0) rate2 = 0.0; else if (rate2 > 1.0) rate2 = 1.0;
+        uint32_t pwm2 = uint32_t(rate2 * _pwm_resolution);
+        if (brake2) {
+            pwms.pwm2_A = pwm2;
+            pwms.pwm2_B = pwm2;
+        } else {
+            if (forward2) {
+                pwms.pwm2_A = pwm2;
+                pwms.pwm2_B = 0;
+            } else {
+                pwms.pwm2_A = 0;
+                pwms.pwm2_B = pwm2;
+            }
+        }
+
+        if (rate3 < 0.0) rate3 = 0.0; else if (rate3 > 1.0) rate3 = 1.0;
+        uint32_t pwm3 = uint32_t(rate3 * _pwm_resolution);
+        if (brake3) {
+            pwms.pwm3_A = pwm3;
+            pwms.pwm3_B = pwm3;
+        } else {
+            if (forward3) {
+                pwms.pwm3_A = pwm3;
+                pwms.pwm3_B = 0;
+            } else {
+                pwms.pwm3_A = 0;
+                pwms.pwm3_B = pwm3;
+            }
+        }
+
+        if (rate4 < 0.0) rate4 = 0.0; else if (rate4 > 1.0) rate4 = 1.0;
+        uint32_t pwm4 = uint32_t(rate4 * _pwm_resolution);
+        if (brake4) {
+            pwms.pwm4_A = pwm4; 
+            pwms.pwm4_B = pwm4;
+        } else {
+            if (forward4) {
+                pwms.pwm4_A = pwm4;
+                pwms.pwm4_B = 0;
+            } else {
+                pwms.pwm4_A = 0;
+                pwms.pwm4_B = pwm4;
+            }
+        }
+
+        setPWMs(pwms);
+    }
+
+
     
     inline void setPWMs(uint32_t pwm1_A, uint32_t pwm1_B, uint32_t pwm2_A, uint32_t pwm2_B, 
                         uint32_t pwm3_A, uint32_t pwm3_B, uint32_t pwm4_A, uint32_t pwm4_B) {
@@ -177,81 +270,3 @@ public:
 
 };
 
-
-
-// ============================== Car Model =================================
-// 차의 방향은 오른쪽을 x축, 정면을 y축으로 함. 
-// 각은 x축에서부터 반시계방향으로 측정
-
-
-enum WheelNumber: size_t {
-    FRONT_RIGHT,
-    FRONT_LEFT,
-    REAR_LEFT,
-    REAR_RIGHT    
-};
-
-struct WheelGeometry {
-    float_t radius;
-    float_t weight;
-    float_t moment_of_inertia;
-    float_t free_angle;
-    float_t free_cos;
-    float_t free_sin;
-    float_t free_tan;
-    float_t free_cot;
-    float_t center_x;
-    float_t center_y;
-    float_t distance_from_center;
-};
-
-class CarModel {
-private:
-    WheelGeometry _wheels[4];
-
-    // 현재 추정 위치 속도 및 가속도
-    CarPosition _current_position;
-    CarVelocity _current_velocity;
-    CarAcceleration _current_acceleration;
-
-
-public:
-
-    AngularVelocities compute_wheel_angular_velocity_from_car_velocity(CarVelocity velocity) {
-        // wheel velocity
-        // V_wheel = V_car + omega X r_wheel (as vector)
-        float_t vx1 = velocity.vx - velocity.omega * _wheels[FRONT_RIGHT].center_y; 
-        float_t vy1 = velocity.vy + velocity.omega * _wheels[FRONT_RIGHT].center_x;
-        float_t vx2 = velocity.vx - velocity.omega * _wheels[FRONT_LEFT].center_y;
-        float_t vy2 = velocity.vy + velocity.omega * _wheels[FRONT_LEFT].center_x;
-        float_t vx3 = velocity.vx - velocity.omega * _wheels[REAR_LEFT].center_y;
-        float_t vy3 = velocity.vy + velocity.omega * _wheels[REAR_LEFT].center_x;
-        float_t vx4 = velocity.vx - velocity.omega * _wheels[REAR_RIGHT].center_y;
-        float_t vy4 = velocity.vy + velocity.omega * _wheels[REAR_RIGHT].center_x;
-
-        AngularVelocities w;
-
-
-        // angular velocity
-        // example
-        /*
-        vx1 = v1_free * cos1 + w1 * radius;
-        vy1 = v1_free * sin1 ; 
-        vx1 = vy1 * cot1 + w1 * radius;
-        w1 = (vx1 - vy1 * cot1) /radius;
-        */
-        AngularVelocities w;
-        w.vel1 = (vx1 - vy1 * _wheels[FRONT_RIGHT].free_cot) / _wheels[FRONT_RIGHT].radius;
-        w.vel2 = (vx2 - vy2 * _wheels[FRONT_LEFT].free_cot) / _wheels[FRONT_LEFT].radius;
-        w.vel3 = (vx3 - vy3 * _wheels[REAR_LEFT].free_cot) / _wheels[REAR_LEFT].radius;
-        w.vel4 = (vx4 - vy4 * _wheels[REAR_RIGHT].free_cot) / _wheels[REAR_RIGHT].radius;
-
-        return w;
-    }
-
-
-
-
-
-
-};

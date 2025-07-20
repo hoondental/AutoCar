@@ -1,4 +1,8 @@
 #include <Arduino.h>
+#include "motors.h"
+#include "imu.h"
+#include "radio_control.h"
+
 
 #define PIN_LED_PINK PC13
 #define PIN_BUZZER PC5
@@ -53,16 +57,10 @@
 #define TIM_CCR_MOTOR4_A TIM1->CCR2
 #define TIM_CCR_MOTOR4_B TIM1->CCR3
 
-struct MotorsPWMTarget
-{
-    uint8_t m1_A = 0;
-    uint8_t m1_B = 0;
-    uint8_t m2_A = 0;
-    uint8_t m2_B = 0;
-    uint8_t m3_A = 0;
-    uint8_t m3_B = 0;
-    uint8_t m4_A = 0;
-    uint8_t m4_B = 0;    
-};
+
+
+
+
+
 
 

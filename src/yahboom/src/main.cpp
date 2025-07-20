@@ -39,7 +39,7 @@ MPU9250I2C& mpu = MPU9250I2C::getInstance(GPIOB, GPIO_PIN_15, GPIOB, GPIO_PIN_13
 
 
 // global shared variable for motor control
-MotorsPWMTarget global_motors_pwm_target;
+MotorDutyRates global_motors_duty_rates;
 EncoderReadings global_encoders_readings;
 AngularVelocities global_wheel_velocities;
 AngularAccelerations global_wheel_accelerations;
@@ -57,11 +57,9 @@ void RCReadTask(void* pvParameters) {
     TickType_t xLastWakeTime = xTaskGetTickCount(); 
 
     for (;;) {
-        if (rc.read()) {
-            taskENTER_CRITICAL();
-            global_sbus_data = rc.data();
-            taskEXIT_CRITICAL();
-        } 
+        taskENTER_CRITICAL();
+        if (rc.read()) global_sbus_data = rc.data();
+        taskEXIT_CRITICAL();
         global_lost_time_ms = rc.lost_time_ms();
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
@@ -107,21 +105,14 @@ void MotorPWMControlTask(void* pvParameters) {
   TickType_t xLastWakeTime = xTaskGetTickCount(); 
 
   // local copy of the global target
-  MotorsPWMTarget target;
+  MotorDutyRates duty_rates;
 
   for (;;) {
     taskENTER_CRITICAL();
-    target = global_motors_pwm_target;
+    duty_rates = global_motors_duty_rates;
     taskEXIT_CRITICAL();
 
-    TIM_CCR_MOTOR1_A = target.m1_A;
-    TIM_CCR_MOTOR1_B = target.m1_B;
-    TIM_CCR_MOTOR2_A = target.m2_A;
-    TIM_CCR_MOTOR2_B = target.m2_B;
-    TIM_CCR_MOTOR3_A = target.m3_A;
-    TIM_CCR_MOTOR3_B = target.m3_B;
-    TIM_CCR_MOTOR4_A = target.m4_A;
-    TIM_CCR_MOTOR4_B = target.m4_B;
+    encoder_motors.setDutyRate(duty_rates);
     
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }

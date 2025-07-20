@@ -31,6 +31,7 @@ private:
     static const uint32_t _sbus_one_third = 718;
     static const uint32_t _sbus_two_third = 1265;
 
+    /*
     inline uint16_t sbus_to_pwm_us(int16_t sbus_val) {
         return (uint16_t)(((sbus_val - 172) * 1000) / (1811 - 172) + 1000);
     }
@@ -39,6 +40,7 @@ private:
         int16_t half_interval = 820 / (num_positions - 1); // 820 = (1811 - 172) / 2
         return (int16_t)(map(sbus_val, 172 - half_interval, 1811 - half_interval, 0, num_positions - 1));
     }
+    */
 
     // singleton 
     RC() = delete;
@@ -103,23 +105,6 @@ enum RC_MODE {
 };
 
 
-class RC2PWM {
-private:
-    RC_MODE _mode;
-    uint32_t _pwm_resolution;
-
-public:
-    RC2PWM(RC_MODE mode = RC_RAW_PWM, uint32_t pwm_resolution = 256) {
-        _mode = mode;
-        _pwm_resolution = pwm_resolution;
-    }
-
-    void convert(float_t longitudinal, float_t lateral, float_t yaw);
-
-
-
-
-};
 
 
 
