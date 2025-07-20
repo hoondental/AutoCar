@@ -8,28 +8,34 @@
 // in radians / second
 // can be used for Encoder readings or for Motor speeds
 struct AngularVelocities {
-    float vel1;
-    float vel2;
-    float vel3;
-    float vel4;
+    float_t vel1, vel2, vel3, vel4;
 };
 
 struct AngularAccelerations {
-    float acc1;
-    float acc2;
-    float acc3;
-    float acc4;
+    float_t acc1, acc2, acc3, acc4;
 };
 
 
 struct EncoderReadings {
     // ARR = 0xFFFF
-    uint16_t enc1;
-    uint16_t enc2;
-    uint16_t enc3;
-    uint16_t enc4;
+    uint16_t enc1, enc2, enc3, enc4;
     uint32_t cycles_at_reading; // DWT->CYCCNT
 };
+
+
+struct CarPosition {
+    float_t x, y, theta;
+};
+
+struct CarVelocity {
+    float_t vx, vy, omega;
+};
+
+struct CarAcceleration {
+    float_t ax, ay, alpha;
+}
+
+
 
 
 
@@ -178,81 +184,69 @@ public:
 // 각은 x축에서부터 반시계방향으로 측정
 
 
-enum WheelPosition: size_t {
+enum WheelNumber: size_t {
     FRONT_RIGHT,
     FRONT_LEFT,
     REAR_LEFT,
     REAR_RIGHT    
 };
 
+struct WheelGeometry {
+    float_t radius;
+    float_t weight;
+    float_t moment_of_inertia;
+    float_t free_angle;
+    float_t free_cos;
+    float_t free_sin;
+    float_t free_tan;
+    float_t free_cot;
+    float_t center_x;
+    float_t center_y;
+    float_t distance_from_center;
+};
+
 class CarModel {
 private:
-    float_t _wheel_radius;
-    float_t _wheel_weight;
-    float_t _wheel_moment_of_inertia;
-    float_t _wheel_roller_free_angles[4];
-    float_t _wheel_center_xs[4];
-    float_t _wheel_center_ys[4];
-    bool _is_symmetric;
+    WheelGeometry _wheels[4];
 
     // 현재 추정 위치 속도 및 가속도
-    float_t _car_x, _car_y, _car_theta;
-    float_t _car_vx, _car_vy, _car_omega;
-    float_t _car_ax, _car_ay, _car_alpha;
-
-    
+    CarPosition _current_position;
+    CarVelocity _current_velocity;
+    CarAcceleration _current_acceleration;
 
 
 public:
 
-    void compute_wheel_angular_velocity_from_car_motion(float_t vx, float_t vy, float_t omega, 
-                        float_t& w1, float_t& w2, float_t& w3, float_t& w4) {
+    AngularVelocities compute_wheel_angular_velocity_from_car_velocity(CarVelocity velocity) {
         // wheel velocity
         // V_wheel = V_car + omega X r_wheel (as vector)
-        float_t vx1 = vx - omega * _wheel_center_ys[FRONT_RIGHT]; 
-        float_t vx2 = vx - omega * _wheel_center_ys[FRONT_LEFT];
-        float_t vx3 = vx - omega * _wheel_center_ys[REAR_LEFT];
-        float_t vx4 = vx - omega * _wheel_center_ys[REAR_RIGHT];
-        float_t vy1 = vy + omega * _wheel_center_xs[FRONT_RIGHT];
-        float_t vy2 = vy + omega * _wheel_center_xs[FRONT_LEFT];
-        float_t vy3 = vy + omega * _wheel_center_xs[REAR_LEFT];
-        float_t vy4 = vy + omega * _wheel_center_xs[REAR_RIGHT];
+        float_t vx1 = velocity.vx - velocity.omega * _wheels[FRONT_RIGHT].center_y; 
+        float_t vy1 = velocity.vy + velocity.omega * _wheels[FRONT_RIGHT].center_x;
+        float_t vx2 = velocity.vx - velocity.omega * _wheels[FRONT_LEFT].center_y;
+        float_t vy2 = velocity.vy + velocity.omega * _wheels[FRONT_LEFT].center_x;
+        float_t vx3 = velocity.vx - velocity.omega * _wheels[REAR_LEFT].center_y;
+        float_t vy3 = velocity.vy + velocity.omega * _wheels[REAR_LEFT].center_x;
+        float_t vx4 = velocity.vx - velocity.omega * _wheels[REAR_RIGHT].center_y;
+        float_t vy4 = velocity.vy + velocity.omega * _wheels[REAR_RIGHT].center_x;
+
+        AngularVelocities w;
+
 
         // angular velocity
         // example
         /*
-        vx1 = v1_free; // t = 
-        vy1 = _wheel_radius * w1 + v1_free;
-        vy1 - vx1 = _wheel_radius * w1;
-        w1 = (vy - vx + omega * (_wheel_center_xs[FRONT_RIGHT] + _wheel_center_ys[FRONT_RIGHT])) / _wheel_radius; 
+        vx1 = v1_free * cos1 + w1 * radius;
+        vy1 = v1_free * sin1 ; 
+        vx1 = vy1 * cot1 + w1 * radius;
+        w1 = (vx1 - vy1 * cot1) /radius;
         */
-        w1 = (vy - vx + omega * (_wheel_center_xs[FRONT_RIGHT] + _wheel_center_ys[FRONT_RIGHT])) / _wheel_radius; 
-        w2 = (vy + vx + omega * (_wheel_center_xs[FRONT_LEFT] - _wheel_center_ys[FRONT_LEFT])) / _wheel_radius;
-        w3 = (vy - vx + omega * (_wheel_center_xs[REAR_LEFT] + _wheel_center_ys[REAR_LEFT])) / _wheel_radius;
-        w4 = (vy + vx + omega * (_wheel_center_xs[REAR_RIGHT] - _wheel_center_ys[REAR_RIGHT])) / _wheel_radius;               
-    }
+        AngularVelocities w;
+        w.vel1 = (vx1 - vy1 * _wheels[FRONT_RIGHT].free_cot) / _wheels[FRONT_RIGHT].radius;
+        w.vel2 = (vx2 - vy2 * _wheels[FRONT_LEFT].free_cot) / _wheels[FRONT_LEFT].radius;
+        w.vel3 = (vx3 - vy3 * _wheels[REAR_LEFT].free_cot) / _wheels[REAR_LEFT].radius;
+        w.vel4 = (vx4 - vy4 * _wheels[REAR_RIGHT].free_cot) / _wheels[REAR_RIGHT].radius;
 
-    void estimate_car_motion_from_wheel_angular_velocity(float_t w1, float_t w2, float_t w3, float_t w4,
-                        float_t& vx, float_t& vy, float_t& omega) {
-        // over-determined problem -> no-solution indicates slippage
-        /*
-        vx1 = v1_free - slippage1;
-        vy1 = _wheel_radius * w1 + v1_free + slippage1;
-        vx2 = -v2_free + slippage2;
-        v2y = _wheel_radius * w2 + v2_free + slippage2;
-        v3x = v3_free - slippage3;
-        v3y = _wheel_radius * w3 + v3_free + slippage3;
-        v4x = -v4_free + slippage4;
-        v4y = _wheel_raidus * w4 + v4_free + slippage4;
-
-        */
-        if (_is_symmetric) {
-            vx = (w1 + w2 + w3 + w4) * _wheel_radius / 4;
-            vy = (w1 - w2 - w3 + w4) / 4;
-            omega = (w1 - w2 + w3 - w4) / 4;
-        vx = (w1 + w2 + w3 + w4) / 4;
-        vy = (w1 - w2 - w3 + w4) / 4;
-        omega = (w1 - w2 + w3 - w4) / 4;
+        return w;
     }
 
 
