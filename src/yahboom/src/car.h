@@ -130,7 +130,7 @@ private:
 
     RC_MODE _mode = RC_MODE::RC_RAW_PWM;
     RC& _rc;
-    uint8_t _ch_longitudinal = RC_CHANNEL_LOGNITUDINAL;
+    uint8_t _chN_throttle = RC_CHANNEL_LOGNITUDINAL;
     uint8_t _ch_lateral = RC_CHANNEL_LATERAL;
     uint8_t _ch_yaw = RC_CHANNEL_YAW;
 

@@ -3,8 +3,8 @@
 
 // RC command
 #define RC_CHANNEL_MODE 8
-#define RC_CHANNEL_LOGNITUDINAL 1
-#define RC_CHANNEL_LATERAL 2
+#define RC_CHANNEL_THROTTLE 1
+#define RC_CHANNEL_ROLL 2
 #define RC_CHANNEL_YAW 3
 
 
@@ -31,6 +31,10 @@ private:
     static const uint32_t _sbus_one_third = 718;
     static const uint32_t _sbus_two_third = 1265;
 
+    const uint32_t _chN_throttle;
+    const uint32_t _chN_roll;
+    const uint32_t _chN_yaw;
+
     /*
     inline uint16_t sbus_to_pwm_us(int16_t sbus_val) {
         return (uint16_t)(((sbus_val - 172) * 1000) / (1811 - 172) + 1000);
@@ -45,8 +49,10 @@ private:
     // singleton 
     RC() = delete;
     RC(const RC&) = delete;
-    RC(HardwareSerial* serial, bool inverted, bool fast)
-        : _sbus(serial, inverted, fast)
+    RC(HardwareSerial* serial, bool inverted, bool fast, 
+        uint32_t chN_throttle = RC_CHANNEL_THROTTLE, uint32_t chN_roll = RC_CHANNEL_ROLL, uint32_t chN_yaw = RC_CHANNEL_YAW)
+        : _sbus(serial, inverted, fast), 
+        _chN_throttle(chN_throttle), _chN_roll(chN_roll), _chN_yaw(chN_yaw)
     {
         //serial->begin(100000, SERIAL_8E2);
         //*_sbus = bfs::SbusRx(serial, true, false);        
@@ -94,6 +100,11 @@ public:
             return 2;
         }
     }
+
+    inline float_t throttle() { return channel_f(_chN_throttle); }
+    inline float_t roll() { return channel_f(_chN_roll); }
+    inline float_t yaw() { return channel_f(_chN_yaw); }
+
     
 };
 
