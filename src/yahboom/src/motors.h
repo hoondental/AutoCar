@@ -23,18 +23,6 @@ struct EncoderReadings {
 };
 
 
-struct CarPosition {
-    float_t x, y, theta;
-};
-
-struct CarVelocity {
-    float_t vx, vy, omega;
-};
-
-struct CarAcceleration {
-    float_t ax, ay, alpha;
-};
-
 
 
 

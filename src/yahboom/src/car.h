@@ -31,6 +31,27 @@ struct WheelGeometry {
     float_t distance_from_center;
 };
 
+
+
+struct CarPosition {
+    float_t x, y, theta;
+};
+
+struct CarVelocity {
+    float_t vx, vy, omega;
+};
+
+struct CarAcceleration {
+    float_t ax, ay, alpha;
+};
+
+struct CarVelocityRate {
+    float_t vx_rate, vy_rate, omega_rate;
+};
+
+
+
+
 class CarModel {
 private:
     WheelGeometry _wheels[4];
