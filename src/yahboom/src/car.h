@@ -55,6 +55,9 @@ struct CarVelocityRate {
 class CarModel {
 private:
     WheelGeometry _wheels[4];
+    EncoderMotors &_motors;
+    MPU9250I2C &_imu;
+    RC &_rc;
 
     // 현재 추정 위치 속도 및 가속도
     CarPosition _current_position;
@@ -63,6 +66,24 @@ private:
 
 
 public:
+    CarModel() : 
+        _motors(EncoderMotors::getInstance()), 
+        _imu(MPU9250I2C::getInstance(GPIOB, GPIO_PIN_15, GPIOB, GPIO_PIN_13, GPIOB, GPIO_PIN_14, MPU_I2C_SPEED_KHZ)),
+        _rc(RC::getInstance(&Serial2, true, false)) 
+    {
+        // Initialize wheel geometries
+        _wheels[FRONT_RIGHT] = {0.1, 1.0, 0.01, 0.0, 1.0, 0.0, 0.0, 0.0, 0.5, 0.5, sqrtf(2) * 0.5f};
+        _wheels[FRONT_LEFT] = {0.1, 1.0, 0.01, M_PI / 2, 0.0, 1.0, 0.0, 1.0, -0.5, 0.5, sqrtf(2) * 0.5f};
+        _wheels[REAR_LEFT] = {0.1, 1.0, 0.01, M_PI, -1.0, 0.0, -1.0, 0.0, -0.5, -0.5, sqrtf(2) * 0.5f};
+        _wheels[REAR_RIGHT] = {0.1, 1.0, 0.01, -M_PI / 2, 0.0, -1.0, -1.0, -1.0, 0.5, -0.5, sqrtf(2) * 0.5f};
+
+        // Initialize current state
+        _current_position = {0.0f, 0.0f, 0.0f};
+        _current_velocity = {0.0f, 0.0f, 0.0f};
+        _current_acceleration = {0.0f, 0.0f, 0.0f};
+
+        // Initialize motors
+    }
 
     AngularVelocities compute_wheel_angular_velocity_from_car_velocity(CarVelocity velocity) {
         // wheel velocity

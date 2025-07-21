@@ -1,6 +1,13 @@
 #ifndef MPU9250_H
 #define MPU9250_H
 
+
+#define MPU_I2C_SPEED_KHZ 400
+#define MPU_GYRO_RANGE_DPS 500
+#define MPU_ACCEL_RANGE_G 2
+#define MPU_DATA_RATE_HZ 200
+#define MPU_MAG_DATA_RATE_HZ 100 // CONTINUOUS
+
 #define MPU9250_ID 0x71
 #define MPU_ADDR 0x68
 #define MAG_ADDR 0x0C
