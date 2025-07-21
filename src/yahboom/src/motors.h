@@ -1,8 +1,11 @@
+#ifndef MOTORS_H
+#define MOTORS_H
+
 #include <Arduino.h>
 #include <STM32FreeRTOS.h>
 #include "arm_math.h"
 
-#define ENCODER_PPR 1320
+
 
 
 // in radians / second
@@ -119,10 +122,6 @@ public:
         // rate: 0.0 ~ 1.0
         // forward: true = forward, false = backward
         // if brake is true, rate means brake strength (0.0 ~ 1.0) and forwardn will be ignored
-        
-        if (rate2 < 0.0) rate2 = 0.0; else if (rate2 > 1.0) rate2 = 1.0;
-        if (rate3 < 0.0) rate3 = 0.0; else if (rate3 > 1.0) rate3 = 1.0;
-        if (rate4 < 0.0) rate4 = 0.0; else if (rate4 > 1.0) rate4 = 1.0;
 
         MotorPWMs pwms;
 
@@ -258,3 +257,5 @@ public:
 
 };
 
+
+#endif

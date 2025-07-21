@@ -13,7 +13,7 @@
 // PWM frequency
 #define MOTOR_PWM_FREQUENCY 10000
 #define MOTOR_PWM_RESOLUTION 256
-
+#define ENCODER_PPR 1320
 
 
 // filtering
@@ -95,7 +95,7 @@ void MPUReadTask(void* pvParameters) {
 
 
 
-void MotorPWMControlTask(void* pvParameters) {
+void MotorDutySetTask(void* pvParameters) {
   (void)pvParameters;
 
   const TickType_t xFrequency = pdMS_TO_TICKS(10); // 10ms = 100Hz
@@ -115,48 +115,46 @@ void MotorPWMControlTask(void* pvParameters) {
   }
 }
 
-
-void MotorPWMSetTask(void* pvParameters) {
+void MotorDutyChangeTask(void* pvParameters) {
   (void)pvParameters;
 
   const TickType_t xFrequency = pdMS_TO_TICKS(10); // 10ms = 100Hz
   TickType_t xLastWakeTime = xTaskGetTickCount(); 
   
   // local copy of the global target
-  MotorsPWMTarget target;
+  MotorDutyRates target;
   int turn_idx = 1;
   
   for (;;) {
     switch (turn_idx){
       case 1:
-        target.m1_A += 1;
-        if (target.m1_A >= PWM_RESOLUTION) target.m1_A = 0;
+        target.rate1 += 0.001;
+        if (target.rate1 >= 1.0) target.rate1 = 0;
         turn_idx += 1;
         break;
       case 2:
-        target.m2_A += 1;
-        if (target.m2_A >= PWM_RESOLUTION) target.m2_A = 0;
+        target.rate2 += 0.001;
+        if (target.rate2 >= 1.0) target.rate2 = 0;
         turn_idx += 1;
         break;
       case 3:
-        target.m3_A += 1;
-        if (target.m3_A >= PWM_RESOLUTION) target.m3_A = 0;
+        target.rate3 += 0.001;
+        if (target.rate3 >= 1.0) target.rate3 = 0;
         turn_idx += 1;
         break;
       case 4:
-        target.m4_A += 1;
-        if (target.m4_A >= PWM_RESOLUTION) target.m4_A = 0;
+        target.rate4 += 0.001;
+        if (target.rate4 >= 1.0) target.rate4 = 0;
         turn_idx = 1;
         break;
     }
     taskENTER_CRITICAL();
-    global_motors_pwm_target = target;
+    global_motors_duty_rates = target;
     taskEXIT_CRITICAL();
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
-
 
 
 
@@ -211,7 +209,7 @@ void Serial1CastTask(void* pvParameters) {
   
   for (;;) {
     taskENTER_CRITICAL();
-    MotorsPWMTarget target = global_motors_pwm_target;
+    MotorDutyRates target = global_motors_duty_rates;
     taskEXIT_CRITICAL();
 
     Serial1.print(global_wheel_velocities.vel1);
@@ -230,13 +228,13 @@ void Serial1CastTask(void* pvParameters) {
     Serial1.print(" ");
     Serial1.print(global_wheel_accelerations.acc4);
     Serial1.print("  ||   ");
-    Serial1.print(target.m1_A);
+    Serial1.print(target.rate1);
     Serial1.print(" ");
-    Serial1.print(target.m2_A);
+    Serial1.print(target.rate2);
     Serial1.print(" ");
-    Serial1.print(target.m3_A);
+    Serial1.print(target.rate3);
     Serial1.print(" ");
-    Serial1.print(target.m4_A);
+    Serial1.print(target.rate4);
 
     Serial1.print("  ||   ");
     for (int i = 0; i < 16; i++) {
@@ -325,15 +323,15 @@ void setup() {
   Serial1.begin(115200);
   pinMode(PIN_KEY1, INPUT_PULLUP);
 
-  encoder_motors.begin(MOTOR_PWM_FREQUENCY, MOTOR_PWM_RESOLUTION);
+  encoder_motors.begin(MOTOR_PWM_FREQUENCY, MOTOR_PWM_RESOLUTION, ENCODER_PPR);
   delay(10);  
 
 
   // Start FreeRTOS task
   xTaskCreate(BlinkTask, "Blink", 128, NULL, 1, NULL);
   //xTaskCreate(BuzzTask, "Buzz", 128, NULL, 1, NULL);
-  //xTaskCreate(MotorPWMSetTask, "MotorPWMSet", 128, NULL, 1, NULL);
-  //xTaskCreate(MotorPWMControlTask, "MotorPWMControl", 128, NULL, 1, NULL);
+  xTaskCreate(MotorDutySetTask, "MotorDutySet", 128, NULL, 1, NULL);
+  xTaskCreate(MotorDutyChangeTask, "MotorDutyChange", 128, NULL, 1, NULL);
   xTaskCreate(EncoderReadTask, "EncoderRead", 128, NULL, 1, NULL); 
   xTaskCreate(Serial1CastTask, "Serial1Cast", 128, NULL, 1, NULL);
   xTaskCreate(MPUReadTask, "MPURead", 128, NULL, 1, NULL);

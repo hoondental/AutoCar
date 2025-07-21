@@ -94,7 +94,7 @@ void EncoderMotors::setupPWMs(uint32_t pwm_frequency, uint32_t pwm_resolution) {
 
     // --- TIM1: Motor 3 and 4 ---
     TIM1->PSC = prescaler;
-    TIM1->ARR = PWM_RESOLUTION - 1;
+    TIM1->ARR = pwm_resolution - 1;
 
     // Channel 4 (Motor3 A)
     TIM1->CCMR2 |= (6 << 12);

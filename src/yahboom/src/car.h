@@ -1,3 +1,6 @@
+#ifndef CAR_H
+#define CAR_H
+
 #include <Arduino.h>
 #include "motors.h"
 #include "imu.h"
@@ -54,7 +57,7 @@ struct CarVelocityRate {
 
 class CarModel {
 private:
-    WheelGeometry _wheels[4];
+    WheelGeometry *_wheels;
     EncoderMotors &_motors;
     MPU9250I2C &_imu;
     RC &_rc;
@@ -66,17 +69,12 @@ private:
 
 
 public:
-    CarModel() : 
-        _motors(EncoderMotors::getInstance()), 
-        _imu(MPU9250I2C::getInstance(GPIOB, GPIO_PIN_15, GPIOB, GPIO_PIN_13, GPIOB, GPIO_PIN_14, MPU_I2C_SPEED_KHZ)),
-        _rc(RC::getInstance(&Serial2, true, false)) 
+    CarModel(EncoderMotors &motors, MPU9250I2C &imu, RC &rc, WheelGeometry *wheels) : 
+        _motors(motors), 
+        _imu(imu),
+        _rc(rc), 
+        _wheels(wheels) 
     {
-        // Initialize wheel geometries
-        _wheels[FRONT_RIGHT] = {0.1, 1.0, 0.01, 0.0, 1.0, 0.0, 0.0, 0.0, 0.5, 0.5, sqrtf(2) * 0.5f};
-        _wheels[FRONT_LEFT] = {0.1, 1.0, 0.01, M_PI / 2, 0.0, 1.0, 0.0, 1.0, -0.5, 0.5, sqrtf(2) * 0.5f};
-        _wheels[REAR_LEFT] = {0.1, 1.0, 0.01, M_PI, -1.0, 0.0, -1.0, 0.0, -0.5, -0.5, sqrtf(2) * 0.5f};
-        _wheels[REAR_RIGHT] = {0.1, 1.0, 0.01, -M_PI / 2, 0.0, -1.0, -1.0, -1.0, 0.5, -0.5, sqrtf(2) * 0.5f};
-
         // Initialize current state
         _current_position = {0.0f, 0.0f, 0.0f};
         _current_velocity = {0.0f, 0.0f, 0.0f};
@@ -84,6 +82,16 @@ public:
 
         // Initialize motors
     }
+
+
+    void begin(uint32_t pwm_frequency = 10000, uint32_t pwm_resolution = 256, uint32_t encoder_PPR = 1320, 
+               int gyro_range_dps = 250, int accel_range_g = 2, uint16_t mpu_dataRate_Hz = 200, uint16_t mag_dataRate_Hz = 100) {
+        _motors.begin(pwm_frequency, pwm_resolution, encoder_PPR);
+        _imu.begin(gyro_range_dps, accel_range_g, mpu_dataRate_Hz, mag_dataRate_Hz);
+        _rc.begin();
+    }
+
+
 
     AngularVelocities compute_wheel_angular_velocity_from_car_velocity(CarVelocity velocity) {
         // wheel velocity
@@ -114,7 +122,7 @@ public:
         return w;
     }
 
-
+    
     
 
 
@@ -123,7 +131,7 @@ public:
 
 
 
-
+/*
 
 class RCController {
 private:
@@ -173,3 +181,7 @@ public:
     }
 };
 
+*/
+
+
+#endif

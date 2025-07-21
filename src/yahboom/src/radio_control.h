@@ -1,3 +1,6 @@
+#ifndef RC_H
+#define RC_H
+
 #include <Arduino.h>
 #include <sbus.h>
 
@@ -118,5 +121,5 @@ enum RC_MODE {
 
 
 
-
+#endif
 
