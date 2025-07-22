@@ -48,7 +48,10 @@ struct CarAcceleration {
     float_t ax, ay, alpha;
 };
 
-struct CarVelocityRate {
+
+// This can be used for PWM input or velocity target or whatever
+// normalized to -1 ~ 1.
+struct CarControlRate {
     float_t vx_rate, vy_rate, omega_rate;
 };
 
@@ -121,6 +124,19 @@ public:
 
         return w;
     }
+
+    MotorDutyRates compute_duty_rates_from_control_rate(CarControlRate con) {
+        // directly compute duty_rates from control_rate
+        // no feed-forward, no feed-back
+        float_t con_mag = sqrt(con.vx_rate * con.vx_rate + con.vy_rate * con.vy_rate + con.omega_rate * con.omega_rate);
+        CarVelocity vel = {con.vx_rate, con.vy_rate, con.omega_rate};
+        AngularVelocities w = compute_wheel_angular_velocity_from_car_velocity(vel);
+        float_t w_max = max({w.vel1, w.vel2, w.vel3, w.vel4});
+        float_t scale = min({con_mag, 1.0f}) / w_max;
+        MotorDutyRates rates = {w.vel1 * scale, w.vel2 * scale, w.vel3 * scale, w.vel4 * scale};
+        return rates;
+    }
+
 
     
     
