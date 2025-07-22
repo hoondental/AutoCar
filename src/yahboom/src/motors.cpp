@@ -97,9 +97,10 @@ void EncoderMotors::setupPWMs(uint32_t pwm_frequency, uint32_t pwm_resolution) {
     // --- TIM1: Motor 3 and 4 ---
 
     // Clear TIM1 remap bits (bits 7:6)
-    AFIO->MAPR &= ~AFIO_MAPR_TIM1_REMAP_Msk;
+    //AFIO->MAPR &= ~AFIO_MAPR_TIM1_REMAP_Msk;
     // Set TIM1 partial remap (CH2 = PB0, CH3 = PB1)
-    AFIO->MAPR |= 0x1 << AFIO_MAPR_TIM1_REMAP_Pos; //AFIO_MAPR_TIM1_REMAP_PARTIAL;
+    //AFIO->MAPR |= 0x1 << AFIO_MAPR_TIM1_REMAP_Pos; //AFIO_MAPR_TIM1_REMAP_PARTIAL;
+    __HAL_AFIO_REMAP_TIM1_PARTIAL();
 
     TIM1->PSC = prescaler;
     TIM1->ARR = pwm_resolution - 1;

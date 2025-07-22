@@ -45,6 +45,9 @@ uint32_t global_lost_time_ms = 0;
 MPUData_f global_mpu_data;
 
 
+
+
+
 void RCReadTask(void* pvParameters) {
     (void)pvParameters;
 
@@ -320,7 +323,7 @@ void BuzzTask(void* pvParameters) {
 void setup() {
 
 
-  Serial1.begin(115200);
+  Serial1.begin(19200);
   pinMode(PIN_KEY1, INPUT_PULLUP);
 
   encoder_motors.begin(MOTOR_PWM_FREQUENCY, MOTOR_PWM_RESOLUTION, ENCODER_PPR);
