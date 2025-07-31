@@ -17,13 +17,13 @@ bool MPU9250I2C::begin(int gyro_range_dps, int accel_range_g, uint16_t mpu_dataR
     HAL_GPIO_Init(_port_ad0, &GPIO_InitStruct);
     HAL_GPIO_WritePin(_port_ad0, _pin_ad0, GPIO_PIN_RESET);
 
-    delay(100);
+    HAL_Delay(100);
 
     // reset MPU9250
     if (!writeByte(MPU_ADDR, MPU_PWR_MGMT1_REG, 0x80)) return false; // reset
-    delay(100);
+    HAL_Delay(100);
     if (!writeByte(MPU_ADDR, MPU_PWR_MGMT1_REG, 0x00)) return false; // Wake up MPU
-    delay(10);
+    HAL_Delay(10);
 
     // Set Gyroscope range
     float_t _degree_to_radian = M_PI / 180.0;
@@ -53,7 +53,7 @@ bool MPU9250I2C::begin(int gyro_range_dps, int accel_range_g, uint16_t mpu_dataR
     if (!set_sampling_rate(mpu_dataRate_Hz)) return false;
 
     if (!i2cBypassEnable()) return false;
-    delay(10);
+    HAL_Delay(10);
     if (!initAK8963(mag_dataRate_Hz)) return false;
     return true;
 }
@@ -99,11 +99,11 @@ bool MPU9250I2C::initAK8963(uint16_t rate_Hz) {
 
     // Power down mag
     writeByte(MAG_ADDR, MAG_CNTL1_REG, 0x00);
-    delay(10);
+    HAL_Delay(10);
 
     // Enter Fuse ROM access mode to read sensitivity adjustment
     writeByte(MAG_ADDR, MAG_CNTL1_REG, 0x0F);
-    delay(10);
+    HAL_Delay(10);
 
     // Read ASA calibration values (registers 0x10–0x12)
     uint8_t asa[3];
@@ -121,7 +121,7 @@ bool MPU9250I2C::initAK8963(uint16_t rate_Hz) {
 
     // Power down again before setting continuous mode
     writeByte(MAG_ADDR, MAG_CNTL1_REG, 0x00);
-    delay(10);
+    HAL_Delay(10);
 
     // Set data rate
     uint8_t rateConfig = 0x16; // default to 8 Hz
@@ -341,7 +341,7 @@ int MPU9250SPI::begin(int gyro_range_dps, int accel_range_g, uint16_t mpu_dataRa
     if (initAK8963(mag_dataRate_Hz) != 0) return -4;
     if (set_sampling_rate(mpu_dataRate_Hz) != 0) return -5;
 
-    delay(10);
+    HAL_Delay(10);
     if (initAK8963(mag_dataRate_Hz) != 0) return -6;
     return 0;
 }

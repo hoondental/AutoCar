@@ -49,8 +49,8 @@
 
 
 
-#include <Arduino.h>
 #include "softI2C.h"
+#include "math.h"
 
 
 struct AccelData {
@@ -153,7 +153,7 @@ public:
     static MPU9250I2C& getInstance(GPIO_TypeDef* port_sda, uint16_t pin_sda, 
                                    GPIO_TypeDef* port_scl, uint16_t pin_scl, 
                                    GPIO_TypeDef* port_ad0, uint16_t pin_ad0, uint32_t i2c_speed_khz) {
-        static MPU9250I2C instance = MPU9250I2C(port_sda, pin_sda, port_scl, pin_scl, port_ad0, pin_ad0, i2c_speed_khz);
+        static MPU9250I2C instance(port_sda, pin_sda, port_scl, pin_scl, port_ad0, pin_ad0, i2c_speed_khz);
         return instance;
     }
     
@@ -228,7 +228,7 @@ private:
 public:
     static MPU9250SPI& getInstance(GPIO_TypeDef* port_sdi, uint16_t pin_sdi, GPIO_TypeDef* port_sdo, uint16_t pin_sdo, 
                GPIO_TypeDef* port_sclk, uint16_t pin_sclk, GPIO_TypeDef* port_cs, uint16_t pin_cs) {
-        static MPU9250SPI instance = MPU9250SPI(port_sdi, pin_sdi, port_sdo, pin_sdo, port_sclk, pin_sclk, port_cs, pin_cs);
+        static MPU9250SPI instance(port_sdi, pin_sdi, port_sdo, pin_sdo, port_sclk, pin_sclk, port_cs, pin_cs);
         return instance;
     }
     

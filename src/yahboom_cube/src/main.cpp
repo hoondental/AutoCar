@@ -1,5 +1,3 @@
-#include <Arduino.h>
-#include <STM32FreeRTOS.h>
 #include <task.h>
 #include <HardwareTimer.h>
 #include <SPI.h>
@@ -9,6 +7,25 @@
 #include "radio_control.h"
 #include <sbus.h>
 //#include "icm20948.h"
+
+
+/* Private variables ---------------------------------------------------------*/
+extern CAN_HandleTypeDef hcan;
+
+extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim3;
+extern TIM_HandleTypeDef htim4;
+extern TIM_HandleTypeDef htim5;
+extern TIM_HandleTypeDef htim7;
+extern TIM_HandleTypeDef htim8;
+
+extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart2;
+extern UART_HandleTypeDef huart3;
+extern DMA_HandleTypeDef hdma_usart1_tx;
+
+
 
 // PWM frequency
 #define MOTOR_PWM_FREQUENCY 10000
