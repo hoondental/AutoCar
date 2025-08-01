@@ -1,9 +1,10 @@
 #ifndef MOTORS_H
 #define MOTORS_H
 
-#include <Arduino.h>
-#include <STM32FreeRTOS.h>
 #include "arm_math.h"
+#include "math.h"
+#include "stm32f1xx.h"
+#include "stm32f1xx_hal.h"
 
 
 
